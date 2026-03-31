@@ -1,0 +1,2056 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>活ガニロス自動計算表</title>
+    <style>
+      :root {
+        --bg: #ece7dc;
+        --surface: #fffdf8;
+        --surface-strong: #f7f0e1;
+        --text: #12233d;
+        --muted: #3a4d66;
+        --border: #18365d;
+        --shadow: rgba(18, 35, 61, 0.16);
+        --glow: rgba(224, 170, 32, 0.28);
+        --accent-gold: #b97d1d;
+        --accent-cream: #f7e6b8;
+        --accent-blue: #175b8c;
+        --accent-orange: #c95317;
+        --accent-green: #206948;
+        --accent-red: #9f2f2f;
+        --amount: #962727;
+        --disabled: #b4bac4;
+        --invalid-bg: #d8d4cb;
+        --overlay: rgba(13, 24, 38, 0.62);
+        --focus: #e0aa20;
+        --radius-xl: 24px;
+        --radius-lg: 18px;
+        --radius-md: 14px;
+        --radius-sm: 10px;
+        --header-height: clamp(112px, 15svh, 154px);
+        --board-gap: clamp(10px, 1.2vw, 16px);
+        --card-padding: clamp(7px, 0.8vw, 12px);
+        --day-num-size: clamp(0.72rem, 1.18vw, 1rem);
+        --amount-size: clamp(0.84rem, 1.4vw, 1.18rem);
+        --chip-size: clamp(0.6rem, 1vw, 0.84rem);
+        --summary-title: clamp(0.82rem, 1.1vw, 0.98rem);
+        --summary-value: clamp(1rem, 1.8vw, 1.56rem);
+        --button-size: clamp(0.9rem, 1.25vw, 1.02rem);
+        --button-height: clamp(42px, 5.1svh, 54px);
+        --title-size: clamp(1.35rem, 2.4vw, 2.15rem);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: radial-gradient(circle at top, #f5efe2 0%, var(--bg) 54%, #ddd4c4 100%);
+        color: var(--text);
+        font-family: "Hiragino Sans", "Yu Gothic", "YuGothic", "Meiryo", sans-serif;
+      }
+
+      body {
+        overflow: hidden;
+        touch-action: manipulation;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        border: none;
+        cursor: pointer;
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .app-shell {
+        height: 100svh;
+        max-height: 100svh;
+        width: min(100%, 1360px);
+        margin: 0 auto;
+        padding: clamp(12px, 1.5vw, 20px);
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        gap: clamp(8px, 1vw, 14px);
+      }
+
+      .app-header {
+        min-height: var(--header-height);
+        display: grid;
+        grid-template-columns: minmax(160px, 1.1fr) minmax(240px, 1.2fr) minmax(310px, 1.35fr);
+        align-items: stretch;
+        gap: clamp(10px, 1vw, 16px);
+      }
+
+      .header-month,
+      .header-title-wrap,
+      .header-actions,
+      .history-strip,
+      .summary-card,
+      .day-card {
+        background: var(--surface);
+        border: 3px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: 0 12px 24px var(--shadow);
+      }
+
+      .header-month,
+      .header-title-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 16px;
+        text-align: center;
+      }
+
+      .header-month {
+        background: linear-gradient(135deg, #fffdfa 0%, #efe4c9 100%);
+        font-size: clamp(1rem, 1.65vw, 1.42rem);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        color: #18365d;
+      }
+
+      .header-title-wrap {
+        background: linear-gradient(135deg, #fffdf7 0%, #f3e5c8 100%);
+      }
+
+      .header-title {
+        margin: 0;
+        font-size: var(--title-size);
+        line-height: 1.2;
+        letter-spacing: 0.04em;
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+        font-weight: 900;
+        color: #10284a;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+      }
+
+      .header-actions {
+        padding: clamp(10px, 1vw, 14px);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: clamp(8px, 0.9vw, 12px);
+      }
+
+      .action-button {
+        min-height: var(--button-height);
+        border-radius: var(--radius-md);
+        color: #fff;
+        font-size: var(--button-size);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+        transition: transform 0.15s ease, filter 0.15s ease;
+      }
+
+      .action-button:active {
+        transform: translateY(1px);
+      }
+
+      .action-button:disabled {
+        cursor: not-allowed;
+        filter: grayscale(0.28);
+        opacity: 0.58;
+        box-shadow: none;
+      }
+
+      .action-setting {
+        background: linear-gradient(180deg, #1d79b4 0%, #165b88 100%);
+      }
+
+      .action-toggle {
+        background: linear-gradient(180deg, #df752c 0%, #b44a18 100%);
+      }
+
+      .action-history {
+        background: linear-gradient(180deg, #2a865b 0%, #1f6746 100%);
+      }
+
+      .action-export {
+        background: linear-gradient(180deg, #b34242 0%, #8d2b2b 100%);
+      }
+
+      .history-strip {
+        min-height: clamp(50px, 6svh, 66px);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: linear-gradient(135deg, #fff7e4 0%, #f4dfb6 100%);
+      }
+
+      .history-strip-label {
+        flex: 1;
+        text-align: center;
+        font-size: clamp(0.92rem, 1.32vw, 1.08rem);
+        font-weight: 800;
+      }
+
+      .back-to-current {
+        min-width: clamp(144px, 15vw, 184px);
+        min-height: clamp(40px, 4.8svh, 50px);
+        border-radius: var(--radius-md);
+        background: linear-gradient(180deg, #214f84 0%, #18365d 100%);
+        color: #fff;
+        font-weight: 800;
+      }
+
+      .board-section {
+        min-height: 0;
+        display: block;
+        overflow: hidden;
+      }
+
+      .days-board {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--board-gap);
+      }
+
+      .days-column {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        gap: var(--board-gap);
+      }
+
+      .days-column[data-rows="10"] {
+        grid-template-rows: repeat(10, minmax(0, 1fr));
+      }
+
+      .days-column[data-rows="11"] {
+        grid-template-rows: repeat(11, minmax(0, 1fr));
+      }
+
+      .day-card {
+        min-height: 0;
+        padding: 6px 8px 7px;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        align-items: stretch;
+        justify-items: center;
+        text-align: center;
+        gap: 3px;
+        background: linear-gradient(180deg, #fffdf8 0%, #f8f0e2 100%);
+        transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+        overflow: hidden;
+        box-shadow:
+          0 12px 24px var(--shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+
+      .day-card:not(:disabled):active {
+        transform: translateY(1px) scale(0.996);
+      }
+
+      .day-card:not(:disabled):hover {
+        box-shadow: 0 16px 26px rgba(18, 35, 61, 0.2);
+      }
+
+      .day-card:disabled {
+        cursor: default;
+      }
+
+      .day-card.is-history {
+        background: linear-gradient(180deg, #f8f4ea 0%, #efe8d7 100%);
+      }
+
+      .day-card.is-invalid {
+        background: linear-gradient(180deg, var(--invalid-bg) 0%, #c9c2b5 100%);
+        border-color: #6e7481;
+        box-shadow: none;
+      }
+
+      .day-number {
+        font-size: var(--day-num-size);
+        font-weight: 900;
+        color: var(--muted);
+        line-height: 1;
+        letter-spacing: 0.03em;
+      }
+
+      .day-card-head {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 14px;
+        padding-bottom: 1px;
+        border-bottom: 1px solid rgba(24, 54, 93, 0.12);
+      }
+
+      .day-card-body {
+        width: 100%;
+        min-height: 0;
+      }
+
+      .day-card-body-amount {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 1px;
+      }
+
+      .day-card-body-kg {
+        display: grid;
+        align-content: center;
+      }
+
+      .day-amount {
+        font-size: var(--amount-size);
+        font-weight: 900;
+        color: var(--amount);
+        line-height: 1;
+        word-break: keep-all;
+      }
+
+      .day-amount.is-zero {
+        color: var(--text);
+      }
+
+      .day-detail-grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 8px;
+        align-content: center;
+      }
+
+      .detail-chip {
+        min-width: 0;
+        padding: 2px 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(24, 54, 93, 0.12);
+        background: rgba(255, 255, 255, 0.72);
+        font-size: clamp(0.55rem, 0.9vw, 0.74rem);
+        font-weight: 800;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      .detail-chip.tone-matsuba {
+        color: #7d4f10;
+        background: linear-gradient(180deg, #fff4d9 0%, #f8e2a9 100%);
+      }
+
+      .detail-chip.tone-katsugani {
+        color: #125579;
+        background: linear-gradient(180deg, #ebf7ff 0%, #cceaff 100%);
+      }
+
+      .detail-chip.tone-kegani {
+        color: #14583d;
+        background: linear-gradient(180deg, #eefbf3 0%, #d0efd9 100%);
+      }
+
+      .detail-chip.tone-sekogani {
+        color: #8e3128;
+        background: linear-gradient(180deg, #fff1ef 0%, #f8d4cf 100%);
+      }
+
+      .invalid-label {
+        font-size: clamp(0.68rem, 1vw, 0.84rem);
+        font-weight: 800;
+        color: #4b515b;
+      }
+
+      .summary-section {
+        display: flex;
+        justify-content: flex-end;
+        min-height: clamp(54px, 6.6svh, 78px);
+      }
+
+      .summary-card {
+        width: min(100%, 390px);
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        background: linear-gradient(135deg, #fffdf8 0%, #f3dfb3 48%, #ecd1a0 100%);
+      }
+
+      .summary-title {
+        font-size: var(--summary-title);
+        font-weight: 900;
+        color: #173453;
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      }
+
+      .summary-value {
+        font-size: var(--summary-value);
+        font-weight: 900;
+        line-height: 1.15;
+        color: #173453;
+      }
+
+      .summary-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 8px;
+      }
+
+      .summary-item {
+        padding: 5px 8px;
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.68);
+        border: 2px solid rgba(24, 54, 93, 0.2);
+        font-size: clamp(0.76rem, 1vw, 0.9rem);
+        font-weight: 800;
+      }
+
+      .modal-layer {
+        position: fixed;
+        inset: 0;
+        background: var(--overlay);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 20;
+      }
+
+      .modal-panel {
+        width: min(820px, 100%);
+        max-height: min(92svh, 920px);
+        overflow: auto;
+        padding: clamp(18px, 2vw, 28px);
+        border-radius: 28px;
+        border: 4px solid var(--border);
+        background: linear-gradient(180deg, #fffdfa 0%, #f3e7d1 68%, #ebdbc0 100%);
+        box-shadow: 0 28px 48px rgba(0, 0, 0, 0.25);
+        text-align: center;
+      }
+
+      .modal-title {
+        margin: 0 0 10px;
+        font-size: clamp(1.2rem, 2vw, 1.72rem);
+        line-height: 1.35;
+        letter-spacing: 0.03em;
+        color: #112b4a;
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+        font-weight: 900;
+      }
+
+      .modal-subtitle {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: clamp(0.92rem, 1.35vw, 1.04rem);
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .modal-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .entry-row,
+      .price-row,
+      .history-row {
+        padding: 14px;
+        border-radius: 18px;
+        border: 3px solid rgba(24, 54, 93, 0.16);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 241, 228, 0.88) 100%);
+      }
+
+      .entry-row {
+        display: grid;
+        gap: 10px;
+      }
+
+      .entry-header,
+      .price-row,
+      .history-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .entry-name,
+      .price-label,
+      .history-month {
+        font-weight: 900;
+        font-size: clamp(1rem, 1.4vw, 1.08rem);
+      }
+
+      .entry-name,
+      .price-label {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 234, 211, 0.96) 100%);
+        border: 2px solid rgba(24, 54, 93, 0.14);
+      }
+
+      .entry-value {
+        font-weight: 900;
+        font-size: clamp(1rem, 1.6vw, 1.18rem);
+        color: var(--accent-blue);
+      }
+
+      .entry-row.tone-matsuba,
+      .price-row.tone-matsuba {
+        border-color: rgba(185, 125, 29, 0.35);
+      }
+
+      .entry-row.tone-katsugani,
+      .price-row.tone-katsugani {
+        border-color: rgba(23, 91, 140, 0.35);
+      }
+
+      .entry-row.tone-kegani,
+      .price-row.tone-kegani {
+        border-color: rgba(32, 105, 72, 0.35);
+      }
+
+      .entry-row.tone-sekogani,
+      .price-row.tone-sekogani {
+        border-color: rgba(159, 47, 47, 0.35);
+      }
+
+      .entry-row.tone-matsuba .entry-name,
+      .price-row.tone-matsuba .price-label {
+        color: #7d4f10;
+      }
+
+      .entry-row.tone-katsugani .entry-name,
+      .price-row.tone-katsugani .price-label {
+        color: #125579;
+      }
+
+      .entry-row.tone-kegani .entry-name,
+      .price-row.tone-kegani .price-label {
+        color: #14583d;
+      }
+
+      .entry-row.tone-sekogani .entry-name,
+      .price-row.tone-sekogani .price-label {
+        color: #8e3128;
+      }
+
+      .adjust-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .adjust-button {
+        min-height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #244f81 0%, #18365d 100%);
+        color: #fff;
+        font-weight: 900;
+      }
+
+      .adjust-button[data-step="reset"] {
+        background: linear-gradient(180deg, #b74242 0%, #8e2d2d 100%);
+      }
+
+      .price-row {
+        gap: 14px;
+      }
+
+      .price-inline {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .price-prefix,
+      .price-suffix {
+        font-size: clamp(0.88rem, 1.2vw, 1rem);
+        font-weight: 800;
+        color: var(--muted);
+      }
+
+      .price-input {
+        width: min(240px, 100%);
+        min-height: 48px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        border: 3px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #f7f1e4 100%);
+        text-align: center;
+        font-size: clamp(1rem, 1.45vw, 1.06rem);
+        font-weight: 900;
+        color: var(--text);
+        box-shadow: inset 0 2px 4px rgba(18, 35, 61, 0.08);
+        cursor: pointer;
+      }
+
+      .price-input.is-active {
+        border-color: var(--accent-gold);
+        box-shadow:
+          inset 0 2px 4px rgba(18, 35, 61, 0.08),
+          0 0 0 4px var(--glow);
+      }
+
+      .price-keypad {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 20px;
+        border: 3px solid rgba(24, 54, 93, 0.18);
+        background: linear-gradient(180deg, rgba(255, 253, 248, 0.95) 0%, rgba(244, 231, 205, 0.95) 100%);
+        display: grid;
+        gap: 12px;
+      }
+
+      .price-keypad-status {
+        font-size: clamp(0.92rem, 1.24vw, 1rem);
+        font-weight: 900;
+        color: #173453;
+      }
+
+      .price-keypad-value {
+        color: var(--accent-orange);
+      }
+
+      .price-keypad-note {
+        color: var(--muted);
+        font-size: clamp(0.78rem, 1.05vw, 0.9rem);
+        font-weight: 700;
+      }
+
+      .price-keypad-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .price-key {
+        min-height: 54px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #fff 0%, #f2e6cb 100%);
+        border: 2px solid rgba(24, 54, 93, 0.18);
+        color: #173453;
+        font-size: clamp(1rem, 1.45vw, 1.18rem);
+        font-weight: 900;
+        box-shadow: inset 0 -2px 0 rgba(24, 54, 93, 0.08);
+      }
+
+      .price-key:active {
+        transform: translateY(1px);
+      }
+
+      .price-key.function-key {
+        background: linear-gradient(180deg, #1f5f93 0%, #18365d 100%);
+        color: #fff;
+      }
+
+      .price-key.clear-key {
+        background: linear-gradient(180deg, #b64d39 0%, #8e3128 100%);
+        color: #fff;
+      }
+
+      .history-row {
+        display: grid;
+        gap: 10px;
+      }
+
+      .history-total {
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .history-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .history-button,
+      .modal-close,
+      .modal-submit,
+      .modal-danger {
+        min-height: 50px;
+        border-radius: 14px;
+        color: #fff;
+        font-weight: 900;
+      }
+
+      .history-button,
+      .modal-close {
+        background: linear-gradient(180deg, #215387 0%, #18365d 100%);
+      }
+
+      .modal-submit {
+        background: linear-gradient(180deg, #cb5a1c 0%, #a44718 100%);
+      }
+
+      .modal-danger {
+        background: linear-gradient(180deg, #b54141 0%, #8d2b2b 100%);
+      }
+
+      .modal-actions {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .modal-actions.single {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .empty-history {
+        padding: 26px 12px;
+        border-radius: 20px;
+        border: 3px dashed rgba(24, 54, 93, 0.3);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      @media (max-width: 980px) {
+        .app-header {
+          grid-template-columns: 1fr 1.1fr 1.15fr;
+        }
+
+        .history-strip {
+          flex-direction: column;
+          justify-content: center;
+        }
+      }
+
+      @media (max-height: 900px) {
+        :root {
+          --header-height: clamp(92px, 13svh, 118px);
+          --board-gap: 8px;
+          --card-padding: 6px;
+          --button-height: clamp(38px, 4.6svh, 46px);
+          --chip-size: clamp(0.54rem, 0.82vw, 0.7rem);
+          --amount-size: clamp(0.72rem, 1.12vw, 0.95rem);
+          --summary-value: clamp(0.98rem, 1.45vw, 1.3rem);
+        }
+
+        .app-shell {
+          padding: 10px;
+          gap: 8px;
+        }
+
+        .header-actions {
+          padding: 8px;
+          gap: 8px;
+        }
+
+        .history-strip,
+        .summary-card {
+          border-radius: 18px;
+        }
+
+        .summary-card {
+          padding: 10px 14px;
+        }
+      }
+
+      @media (max-height: 820px) {
+        :root {
+          --header-height: clamp(76px, 10.5svh, 94px);
+          --board-gap: 6px;
+          --button-height: clamp(34px, 4svh, 40px);
+          --title-size: clamp(1.08rem, 2vw, 1.58rem);
+          --day-num-size: clamp(0.62rem, 0.92vw, 0.82rem);
+          --amount-size: clamp(0.62rem, 1vw, 0.88rem);
+          --summary-title: clamp(0.72rem, 0.95vw, 0.84rem);
+          --summary-value: clamp(0.86rem, 1.2vw, 1.08rem);
+        }
+
+        .app-shell {
+          width: min(100%, 1280px);
+          padding: 8px;
+          gap: 6px;
+        }
+
+        .app-header {
+          gap: 8px;
+        }
+
+        .header-month,
+        .header-title-wrap,
+        .header-actions,
+        .history-strip,
+        .summary-card,
+        .day-card {
+          border-width: 2px;
+          box-shadow: 0 8px 18px rgba(18, 35, 61, 0.14);
+        }
+
+        .header-month,
+        .header-title-wrap {
+          padding: 8px 12px;
+        }
+
+        .header-actions {
+          padding: 6px;
+          gap: 6px;
+        }
+
+        .day-card {
+          padding: 4px 6px 5px;
+          gap: 2px;
+        }
+
+        .day-card-head {
+          min-height: 12px;
+        }
+
+        .detail-chip {
+          padding: 1px 4px;
+          font-size: clamp(0.46rem, 0.76vw, 0.64rem);
+        }
+
+        .summary-section {
+          min-height: 48px;
+        }
+
+        .summary-card {
+          width: min(100%, 340px);
+          padding: 5px 10px;
+          gap: 4px;
+        }
+
+        .summary-item {
+          padding: 4px 6px;
+          font-size: clamp(0.68rem, 0.84vw, 0.78rem);
+        }
+      }
+
+      @media (max-height: 720px) {
+        .app-shell {
+          padding: 6px;
+          gap: 5px;
+        }
+
+        .header-actions {
+          gap: 5px;
+        }
+
+        .summary-section {
+          min-height: 42px;
+        }
+
+        .summary-card {
+          width: min(100%, 320px);
+          padding: 4px 8px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --header-height: auto;
+          --board-gap: 8px;
+          --card-padding: 6px;
+        }
+
+        .app-shell {
+          padding: 10px;
+          gap: 8px;
+        }
+
+        .app-header {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .header-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .summary-section {
+          justify-content: stretch;
+        }
+
+        .summary-card {
+          width: 100%;
+        }
+
+        .adjust-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .adjust-button[data-step="up1"],
+        .adjust-button[data-step="down1"] {
+          grid-column: span 1;
+        }
+      }
+
+      @media (max-width: 520px) {
+        :root {
+          --button-height: 42px;
+          --chip-size: 0.56rem;
+          --amount-size: 0.74rem;
+          --day-num-size: 0.66rem;
+        }
+
+        .modal-layer {
+          padding: 10px;
+        }
+
+        .modal-panel {
+          padding: 16px 14px;
+        }
+
+        .price-row,
+        .entry-header,
+        .history-head {
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .price-inline {
+          justify-content: center;
+        }
+
+        .price-keypad-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .history-actions,
+        .modal-actions {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-list {
+          grid-template-columns: 1fr;
+        }
+
+        .adjust-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="header-month" id="header-month"></div>
+        <div class="header-title-wrap">
+          <h1 class="header-title">活ガニロス自動計算表</h1>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="action-button action-setting" data-action="open-prices">
+            金額設定
+          </button>
+          <button type="button" class="action-button action-toggle" data-action="toggle-mode">
+            表示切替
+          </button>
+          <button type="button" class="action-button action-history" data-action="open-history">
+            履歴
+          </button>
+          <button type="button" class="action-button action-export" data-action="export-current">
+            画像を保存
+          </button>
+        </div>
+      </header>
+
+      <section class="history-strip hidden" id="history-strip">
+        <div class="history-strip-label" id="history-strip-label"></div>
+        <button type="button" class="back-to-current" data-action="back-current">
+          今月に戻る
+        </button>
+      </section>
+
+      <section class="board-section">
+        <div class="days-board" id="days-board"></div>
+      </section>
+
+      <section class="summary-section">
+        <div class="summary-card" id="summary-card"></div>
+      </section>
+    </main>
+
+    <div class="modal-layer hidden" id="modal-layer"></div>
+
+    <script>
+      const STORAGE_KEY = "katsugani-loss-app-v1";
+      const CRABS = [
+        { id: "matsuba", label: "松葉がに", short: "松葉" },
+        { id: "katsugani", label: "活がに", short: "活" },
+        { id: "kegani", label: "毛がに", short: "毛" },
+        { id: "sekogani", label: "せこがに", short: "せこ" },
+      ];
+      const COLUMN_RANGES = [
+        { start: 1, end: 10, rows: 10 },
+        { start: 11, end: 20, rows: 10 },
+        { start: 21, end: 31, rows: 11 },
+      ];
+
+      const runtime = {
+        currentMonthKey: "",
+        viewMonthKey: "",
+        modal: { type: null },
+        storageMode: "temporary",
+        hasShownStorageNotice: false,
+      };
+
+      const elements = {
+        headerMonth: document.querySelector("#header-month"),
+        daysBoard: document.querySelector("#days-board"),
+        summaryCard: document.querySelector("#summary-card"),
+        modalLayer: document.querySelector("#modal-layer"),
+        historyStrip: document.querySelector("#history-strip"),
+        historyStripLabel: document.querySelector("#history-strip-label"),
+      };
+
+      const storage = createStorage();
+      const state = loadState();
+
+      boot();
+
+      function boot() {
+        syncCurrentMonth();
+        runtime.viewMonthKey = runtime.currentMonthKey;
+        bindEvents();
+        render();
+        maybeShowStorageNotice();
+        document.addEventListener("visibilitychange", syncMonthIfNeeded);
+        window.setInterval(syncMonthIfNeeded, 60_000);
+      }
+
+      function createStorage() {
+        const memoryStore = {};
+
+        const memoryStorage = {
+          kind: "temporary",
+          getItem(key) {
+            return Object.prototype.hasOwnProperty.call(memoryStore, key) ? memoryStore[key] : null;
+          },
+          setItem(key, value) {
+            memoryStore[key] = String(value);
+          },
+          removeItem(key) {
+            delete memoryStore[key];
+          },
+        };
+
+        try {
+          if (!("localStorage" in window)) {
+            runtime.storageMode = memoryStorage.kind;
+            return memoryStorage;
+          }
+
+          const probeKey = "__katsugani_probe__";
+          window.localStorage.setItem(probeKey, "ok");
+          window.localStorage.removeItem(probeKey);
+          runtime.storageMode = "persistent";
+
+          return {
+            kind: "persistent",
+            getItem(key) {
+              return window.localStorage.getItem(key);
+            },
+            setItem(key, value) {
+              window.localStorage.setItem(key, value);
+            },
+            removeItem(key) {
+              window.localStorage.removeItem(key);
+            },
+          };
+        } catch {
+          runtime.storageMode = memoryStorage.kind;
+          return memoryStorage;
+        }
+      }
+
+      function loadState() {
+        try {
+          const raw = storage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return { mode: "amount", months: {} };
+          }
+
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") {
+            return { mode: "amount", months: {} };
+          }
+
+          return {
+            mode: parsed.mode === "kg" ? "kg" : "amount",
+            months: parsed.months && typeof parsed.months === "object" ? parsed.months : {},
+          };
+        } catch {
+          return { mode: "amount", months: {} };
+        }
+      }
+
+      function saveState() {
+        try {
+          storage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              mode: state.mode,
+              months: state.months,
+            }),
+          );
+        } catch {
+          runtime.storageMode = "temporary";
+        }
+      }
+
+      function bindEvents() {
+        document.addEventListener("click", handleClick);
+        document.addEventListener("keydown", handleKeyDown);
+      }
+
+      function handleClick(event) {
+        const actionTarget = event.target.closest("[data-action]");
+        if (!actionTarget) {
+          if (event.target === elements.modalLayer) {
+            closeModal();
+            renderModal();
+          }
+          return;
+        }
+
+        const action = actionTarget.dataset.action;
+
+        switch (action) {
+          case "toggle-mode":
+            state.mode = state.mode === "amount" ? "kg" : "amount";
+            saveState();
+            render();
+            return;
+          case "open-prices":
+            if (isHistoryView()) {
+              openInfoModal("履歴表示中は金額設定を変更できません。今月に戻ってから設定してください。");
+            } else {
+              openPriceModal();
+            }
+            renderModal();
+            return;
+          case "open-history":
+            openHistoryModal();
+            renderModal();
+            return;
+          case "export-current":
+            exportMonthImage(runtime.viewMonthKey);
+            return;
+          case "back-current":
+            runtime.viewMonthKey = runtime.currentMonthKey;
+            render();
+            return;
+          case "open-day":
+            if (!isHistoryView()) {
+              openDayModal(Number(actionTarget.dataset.day));
+              renderModal();
+            }
+            return;
+          case "adjust-entry":
+            adjustDraftValue(actionTarget.dataset.crab, actionTarget.dataset.step);
+            renderModal();
+            return;
+          case "close-modal":
+            closeModal();
+            renderModal();
+            return;
+          case "apply-day":
+            applyDayDraft();
+            return;
+          case "apply-prices":
+            applyPrices();
+            return;
+          case "select-price-input":
+            selectPriceInput(actionTarget.dataset.priceInput);
+            renderModal();
+            return;
+          case "price-key":
+            handlePriceKey(actionTarget.dataset.keyValue);
+            renderModal();
+            return;
+          case "view-history":
+            runtime.viewMonthKey = actionTarget.dataset.monthKey;
+            closeModal();
+            render();
+            return;
+          case "history-export":
+            exportMonthImage(actionTarget.dataset.monthKey);
+            return;
+          case "history-delete":
+            openDeleteModal(actionTarget.dataset.monthKey);
+            renderModal();
+            return;
+          case "confirm-delete-history":
+            deleteHistoryMonth(actionTarget.dataset.monthKey);
+            return;
+          case "ack-info":
+            closeModal();
+            renderModal();
+            return;
+          default:
+            return;
+        }
+      }
+
+      function handleKeyDown(event) {
+        if (runtime.modal.type !== "prices") {
+          return;
+        }
+
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+          return;
+        }
+
+        if (/^\d$/.test(event.key)) {
+          event.preventDefault();
+          handlePriceKey(event.key);
+          renderModal();
+          return;
+        }
+
+        if (event.key === "Backspace") {
+          event.preventDefault();
+          handlePriceKey("backspace");
+          renderModal();
+          return;
+        }
+
+        if (event.key === "Delete") {
+          event.preventDefault();
+          handlePriceKey("clear");
+          renderModal();
+        }
+      }
+
+      function syncMonthIfNeeded() {
+        if (document.visibilityState === "hidden") {
+          return;
+        }
+
+        const previousCurrent = runtime.currentMonthKey;
+        syncCurrentMonth();
+        if (previousCurrent !== runtime.currentMonthKey) {
+          runtime.viewMonthKey = runtime.currentMonthKey;
+          openInfoModal("月が切り替わったため、新しい月のページに自動で切り替えました。前の月は履歴から確認できます。");
+          render();
+          renderModal();
+        }
+      }
+
+      function maybeShowStorageNotice() {
+        if (runtime.storageMode === "persistent" || runtime.hasShownStorageNotice) {
+          return;
+        }
+
+        runtime.hasShownStorageNotice = true;
+        openInfoModal(
+          "この開き方では履歴や設定が端末に保存されない場合があります。画面は使えますが、公開時やローカルサーバー経由で開く方が安定します。",
+        );
+        renderModal();
+      }
+
+      function syncCurrentMonth() {
+        const now = new Date();
+        const currentMonthKey = getMonthKey(now.getFullYear(), now.getMonth() + 1);
+        runtime.currentMonthKey = currentMonthKey;
+
+        if (!state.months[currentMonthKey]) {
+          const inheritedPrices = getInheritedPrices(currentMonthKey);
+          state.months[currentMonthKey] = createMonthRecord(now.getFullYear(), now.getMonth() + 1, inheritedPrices);
+          saveState();
+        }
+      }
+
+      function getInheritedPrices(currentMonthKey) {
+        const keys = Object.keys(state.months).sort();
+        const previousKeys = keys.filter((key) => key < currentMonthKey);
+        const latestBeforeCurrent = previousKeys[previousKeys.length - 1];
+        if (!latestBeforeCurrent) {
+          return getZeroPrices();
+        }
+
+        return { ...state.months[latestBeforeCurrent].prices };
+      }
+
+      function createMonthRecord(year, month, basePrices) {
+        const entries = {};
+        for (let day = 1; day <= 31; day += 1) {
+          entries[day] = createEmptyEntry();
+        }
+
+        return {
+          year,
+          month,
+          prices: {
+            ...getZeroPrices(),
+            ...basePrices,
+          },
+          entries,
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      function createEmptyEntry() {
+        return Object.fromEntries(CRABS.map((crab) => [crab.id, 0]));
+      }
+
+      function getZeroPrices() {
+        return Object.fromEntries(CRABS.map((crab) => [crab.id, 0]));
+      }
+
+      function getCrabToneClass(crabId) {
+        return `tone-${crabId}`;
+      }
+
+      function getMonthKey(year, month) {
+        return `${year}-${String(month).padStart(2, "0")}`;
+      }
+
+      function getViewedRecord() {
+        return state.months[runtime.viewMonthKey];
+      }
+
+      function isHistoryView() {
+        return runtime.viewMonthKey !== runtime.currentMonthKey;
+      }
+
+      function render() {
+        renderHeader();
+        renderHistoryStrip();
+        renderDaysBoard();
+        renderSummary();
+        renderModal();
+      }
+
+      function renderHeader() {
+        const record = getViewedRecord();
+        elements.headerMonth.textContent = formatJapaneseMonth(record.year, record.month);
+        const settingButton = document.querySelector('[data-action="open-prices"]');
+        settingButton.disabled = isHistoryView();
+      }
+
+      function renderHistoryStrip() {
+        if (!isHistoryView()) {
+          elements.historyStrip.classList.add("hidden");
+          return;
+        }
+
+        const record = getViewedRecord();
+        elements.historyStrip.classList.remove("hidden");
+        elements.historyStripLabel.textContent =
+          `履歴を表示中: ${formatJapaneseMonth(record.year, record.month)} は閲覧専用です`;
+      }
+
+      function renderDaysBoard() {
+        const record = getViewedRecord();
+        const daysInMonth = getDaysInMonth(record.year, record.month);
+        const columnsHtml = COLUMN_RANGES.map((range) => renderColumn(range, record, daysInMonth)).join("");
+        elements.daysBoard.innerHTML = columnsHtml;
+      }
+
+      function renderColumn(range, record, daysInMonth) {
+        const cards = [];
+        for (let day = range.start; day <= range.end; day += 1) {
+          cards.push(renderDayCard(day, record, day > daysInMonth));
+        }
+
+        return `<div class="days-column" data-rows="${range.rows}">${cards.join("")}</div>`;
+      }
+
+      function renderDayCard(day, record, isInvalid) {
+        const entry = record.entries[day] ?? createEmptyEntry();
+        const classes = ["day-card"];
+        let disabled = "";
+        if (isHistoryView()) {
+          classes.push("is-history");
+          disabled = "disabled";
+        }
+        if (isInvalid) {
+          classes.push("is-invalid");
+          disabled = "disabled";
+        }
+
+        if (isInvalid) {
+          return `
+            <button type="button" class="${classes.join(" ")}" ${disabled}>
+              <div class="day-card-head">
+                <div class="day-number">${day}日</div>
+              </div>
+              <div class="day-card-body day-card-body-amount">
+                <div class="invalid-label">対象外</div>
+              </div>
+            </button>
+          `;
+        }
+
+        const content =
+          state.mode === "amount"
+            ? `
+              <div class="day-card-body day-card-body-amount">
+                <div class="day-amount ${getDayTotal(record, day) === 0 ? "is-zero" : ""}">${formatAmount(getDayTotal(record, day))}</div>
+              </div>
+            `
+            : renderDayDetails(entry);
+
+        return `
+          <button
+            type="button"
+            class="${classes.join(" ")}"
+            data-action="open-day"
+            data-day="${day}"
+            ${disabled}
+          >
+            <div class="day-card-head">
+              <div class="day-number">${day}日</div>
+            </div>
+            ${content}
+          </button>
+        `;
+      }
+
+      function renderDayDetails(entry) {
+        return `
+          <div class="day-card-body day-card-body-kg">
+            <div class="day-detail-grid">
+              ${CRABS.map(
+                (crab) => `
+                  <div class="detail-chip ${getCrabToneClass(crab.id)}">${crab.short} ${formatKg(entry[crab.id])}</div>
+                `,
+              ).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderSummary() {
+        const record = getViewedRecord();
+
+        if (state.mode === "amount") {
+          elements.summaryCard.innerHTML = `
+            <div class="summary-title">その月のロス金額合計</div>
+            <div class="summary-value">${formatAmount(getMonthTotal(record))}</div>
+          `;
+          return;
+        }
+
+        elements.summaryCard.innerHTML = `
+          <div class="summary-title">その月のロスkg合計</div>
+          <div class="summary-list">
+            ${CRABS.map(
+              (crab) => `
+                <div class="summary-item">${crab.label}<br />合計 ${formatKg(getCrabMonthlyTotal(record, crab.id))}</div>
+              `,
+            ).join("")}
+          </div>
+        `;
+      }
+
+      function renderModal() {
+        const previousPanel = elements.modalLayer.querySelector(".modal-panel");
+        if (previousPanel && runtime.modal.type) {
+          runtime.modal.scrollTop = previousPanel.scrollTop;
+        }
+
+        if (!runtime.modal.type) {
+          elements.modalLayer.classList.add("hidden");
+          elements.modalLayer.innerHTML = "";
+          return;
+        }
+
+        elements.modalLayer.classList.remove("hidden");
+        elements.modalLayer.innerHTML = renderModalContent();
+        const nextPanel = elements.modalLayer.querySelector(".modal-panel");
+        if (nextPanel && typeof runtime.modal.scrollTop === "number") {
+          nextPanel.scrollTop = runtime.modal.scrollTop;
+        }
+      }
+
+      function renderModalContent() {
+        switch (runtime.modal.type) {
+          case "day":
+            return renderDayModal();
+          case "prices":
+            return renderPriceModal();
+          case "history":
+            return renderHistoryModal();
+          case "delete-history":
+            return renderDeleteModal();
+          case "info":
+            return renderInfoModal();
+          default:
+            return "";
+        }
+      }
+
+      function openDayModal(day) {
+        const record = getViewedRecord();
+        runtime.modal = {
+          type: "day",
+          day,
+          draftEntry: cloneSimple(record.entries[day] ?? createEmptyEntry()),
+          scrollTop: 0,
+        };
+      }
+
+      function renderDayModal() {
+        return `
+          <div class="modal-panel" role="dialog" aria-modal="true">
+            <h2 class="modal-title">${runtime.modal.day}日の記録</h2>
+            <p class="modal-subtitle">活ガニを何kgロスしたか記録してください</p>
+            <div class="modal-grid">
+              ${CRABS.map((crab) => renderEntryRow(crab, runtime.modal.draftEntry[crab.id])).join("")}
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="modal-close" data-action="close-modal">戻る</button>
+              <button type="button" class="modal-submit" data-action="apply-day">反映</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderEntryRow(crab, value) {
+        return `
+          <section class="entry-row ${getCrabToneClass(crab.id)}">
+            <div class="entry-header">
+              <div class="entry-name">${crab.label}</div>
+              <div class="entry-value">${formatKg(value)}</div>
+            </div>
+            <div class="adjust-grid">
+              <button type="button" class="adjust-button" data-action="adjust-entry" data-crab="${crab.id}" data-step="down1">-1.0</button>
+              <button type="button" class="adjust-button" data-action="adjust-entry" data-crab="${crab.id}" data-step="down01">-0.1</button>
+              <button type="button" class="adjust-button" data-action="adjust-entry" data-crab="${crab.id}" data-step="reset">0に戻す</button>
+              <button type="button" class="adjust-button" data-action="adjust-entry" data-crab="${crab.id}" data-step="up01">+0.1</button>
+              <button type="button" class="adjust-button" data-action="adjust-entry" data-crab="${crab.id}" data-step="up1">+1.0</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function adjustDraftValue(crabId, step) {
+        if (runtime.modal.type !== "day") {
+          return;
+        }
+
+        const current = runtime.modal.draftEntry[crabId] ?? 0;
+        const stepMap = {
+          down1: -1,
+          down01: -0.1,
+          up01: 0.1,
+          up1: 1,
+        };
+
+        if (step === "reset") {
+          runtime.modal.draftEntry[crabId] = 0;
+          return;
+        }
+
+        const next = Math.max(0, current + stepMap[step]);
+        runtime.modal.draftEntry[crabId] = roundKg(next);
+      }
+
+      function applyDayDraft() {
+        if (runtime.modal.type !== "day") {
+          return;
+        }
+
+        const record = getViewedRecord();
+        record.entries[runtime.modal.day] = cloneSimple(runtime.modal.draftEntry);
+        saveState();
+        closeModal();
+        render();
+      }
+
+      function openPriceModal() {
+        const record = getViewedRecord();
+        runtime.modal = {
+          type: "prices",
+          draftPriceTexts: createDraftPriceTexts(record.prices),
+          activePriceId: CRABS[0].id,
+          scrollTop: 0,
+        };
+      }
+
+      function renderPriceModal() {
+        const activeCrab = CRABS.find((crab) => crab.id === runtime.modal.activePriceId) ?? CRABS[0];
+        return `
+          <div class="modal-panel" role="dialog" aria-modal="true">
+            <h2 class="modal-title">kg単価を設定してください</h2>
+            <p class="modal-subtitle">入力した単価は、この月の計算にそのまま反映されます</p>
+            <div class="modal-grid">
+              ${CRABS.map(
+                (crab) => `
+                  <div class="price-row ${getCrabToneClass(crab.id)}">
+                    <span class="price-label">${crab.label}</span>
+                    <span class="price-inline">
+                      <span class="price-prefix">キログラムあたり</span>
+                      <input
+                        class="price-input ${runtime.modal.activePriceId === crab.id ? "is-active" : ""}"
+                        type="text"
+                        inputmode="none"
+                        readonly
+                        data-price-input="${crab.id}"
+                        data-action="select-price-input"
+                        value="${runtime.modal.draftPriceTexts[crab.id] ?? "0"}"
+                      />
+                      <span class="price-suffix">円</span>
+                    </span>
+                  </div>
+                `,
+              ).join("")}
+            </div>
+            <div class="price-keypad">
+              <div class="price-keypad-status">入力中: ${activeCrab.label} <span class="price-keypad-value">${getActivePriceDisplay()}</span></div>
+              <div class="price-keypad-note">入力したい項目を押してから、下の数字キーで金額を入れてください</div>
+              <div class="price-keypad-grid">
+                ${["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "backspace", "clear"]
+                  .map((key) => renderPriceKey(key))
+                  .join("")}
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="modal-close" data-action="close-modal">戻る</button>
+              <button type="button" class="modal-submit" data-action="apply-prices">更新</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function applyPrices() {
+        if (runtime.modal.type !== "prices") {
+          return;
+        }
+
+        const record = getViewedRecord();
+        record.prices = convertDraftPriceTextsToPrices(runtime.modal.draftPriceTexts);
+        saveState();
+        closeModal();
+        render();
+      }
+
+      function renderPriceKey(key) {
+        if (key === "backspace") {
+          return '<button type="button" class="price-key function-key" data-action="price-key" data-key-value="backspace">1文字削除</button>';
+        }
+
+        if (key === "clear") {
+          return '<button type="button" class="price-key clear-key" data-action="price-key" data-key-value="clear">全消去</button>';
+        }
+
+        return `<button type="button" class="price-key" data-action="price-key" data-key-value="${key}">${key}</button>`;
+      }
+
+      function createDraftPriceTexts(prices) {
+        return Object.fromEntries(
+          CRABS.map((crab) => {
+            const value = Number(prices?.[crab.id] ?? 0);
+            return [crab.id, String(Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0)];
+          }),
+        );
+      }
+
+      function selectPriceInput(crabId) {
+        if (runtime.modal.type !== "prices") {
+          return;
+        }
+
+        runtime.modal.activePriceId = crabId;
+        if (runtime.modal.draftPriceTexts[crabId] === "0") {
+          runtime.modal.draftPriceTexts[crabId] = "";
+        }
+      }
+
+      function handlePriceKey(keyValue) {
+        if (runtime.modal.type !== "prices") {
+          return;
+        }
+
+        const activePriceId = runtime.modal.activePriceId ?? CRABS[0].id;
+        runtime.modal.activePriceId = activePriceId;
+        const currentText = runtime.modal.draftPriceTexts[activePriceId] ?? "";
+
+        if (keyValue === "backspace") {
+          runtime.modal.draftPriceTexts[activePriceId] = currentText.slice(0, -1);
+          return;
+        }
+
+        if (keyValue === "clear") {
+          runtime.modal.draftPriceTexts[activePriceId] = "";
+          return;
+        }
+
+        if (!/^\d$/.test(keyValue)) {
+          return;
+        }
+
+        const normalizedCurrent = currentText === "0" ? "" : currentText;
+        const nextText = `${normalizedCurrent}${keyValue}`.replace(/^0+(?=\d)/, "");
+        runtime.modal.draftPriceTexts[activePriceId] = nextText.slice(0, 7);
+      }
+
+      function convertDraftPriceTextsToPrices(draftPriceTexts) {
+        return Object.fromEntries(
+          CRABS.map((crab) => [crab.id, sanitizePrice(draftPriceTexts?.[crab.id] ?? "")]),
+        );
+      }
+
+      function getActivePriceDisplay() {
+        if (runtime.modal.type !== "prices") {
+          return "";
+        }
+
+        const activePriceId = runtime.modal.activePriceId ?? CRABS[0].id;
+        const currentText = runtime.modal.draftPriceTexts[activePriceId];
+        return `${currentText && currentText.length > 0 ? currentText : "0"}円`;
+      }
+
+      function openHistoryModal() {
+        runtime.modal = { type: "history", scrollTop: 0 };
+      }
+
+      function renderHistoryModal() {
+        const historyKeys = getHistoryKeys();
+        return `
+          <div class="modal-panel" role="dialog" aria-modal="true">
+            <h2 class="modal-title">履歴</h2>
+            <p class="modal-subtitle">前の月の記録を表示、画像保存、削除できます</p>
+            ${
+              historyKeys.length === 0
+                ? `<div class="empty-history">まだ履歴はありません</div>`
+                : `<div class="modal-grid">${historyKeys.map((monthKey) => renderHistoryRow(monthKey)).join("")}</div>`
+            }
+            <div class="modal-actions single">
+              <button type="button" class="modal-close" data-action="close-modal">戻る</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderHistoryRow(monthKey) {
+        const record = state.months[monthKey];
+        return `
+          <section class="history-row">
+            <div class="history-head">
+              <div class="history-month">${formatJapaneseMonth(record.year, record.month)}</div>
+              <div class="history-total">ロス金額合計 ${formatAmount(getMonthTotal(record))}</div>
+            </div>
+            <div class="history-actions">
+              <button type="button" class="history-button" data-action="view-history" data-month-key="${monthKey}">表示</button>
+              <button type="button" class="modal-submit" data-action="history-export" data-month-key="${monthKey}">画像を保存</button>
+              <button type="button" class="modal-danger" data-action="history-delete" data-month-key="${monthKey}">削除</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function openDeleteModal(monthKey) {
+        runtime.modal = { type: "delete-history", monthKey, scrollTop: 0 };
+      }
+
+      function renderDeleteModal() {
+        const record = state.months[runtime.modal.monthKey];
+        return `
+          <div class="modal-panel" role="dialog" aria-modal="true">
+            <h2 class="modal-title">${formatJapaneseMonth(record.year, record.month)}を削除しますか</h2>
+            <p class="modal-subtitle">削除すると、この月の記録と保存用データは元に戻せません</p>
+            <div class="modal-actions">
+              <button type="button" class="modal-close" data-action="close-modal">戻る</button>
+              <button
+                type="button"
+                class="modal-danger"
+                data-action="confirm-delete-history"
+                data-month-key="${runtime.modal.monthKey}"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      function deleteHistoryMonth(monthKey) {
+        delete state.months[monthKey];
+        if (runtime.viewMonthKey === monthKey) {
+          runtime.viewMonthKey = runtime.currentMonthKey;
+        }
+        saveState();
+        openHistoryModal();
+        render();
+      }
+
+      function openInfoModal(message) {
+        runtime.modal = { type: "info", message, scrollTop: 0 };
+      }
+
+      function renderInfoModal() {
+        return `
+          <div class="modal-panel" role="dialog" aria-modal="true">
+            <h2 class="modal-title">お知らせ</h2>
+            <p class="modal-subtitle">${runtime.modal.message}</p>
+            <div class="modal-actions single">
+              <button type="button" class="modal-close" data-action="ack-info">閉じる</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function closeModal() {
+        runtime.modal = { type: null };
+      }
+
+      function getHistoryKeys() {
+        return Object.keys(state.months)
+          .filter((monthKey) => monthKey !== runtime.currentMonthKey)
+          .sort((left, right) => right.localeCompare(left));
+      }
+
+      function getDayTotal(record, day) {
+        const entry = record.entries[day];
+        if (!entry) {
+          return 0;
+        }
+
+        const rawTotal = CRABS.reduce((sum, crab) => {
+          const kg = Number(entry[crab.id] ?? 0);
+          const price = Number(record.prices[crab.id] ?? 0);
+          return sum + kg * price;
+        }, 0);
+
+        return Math.round(rawTotal);
+      }
+
+      function getMonthTotal(record) {
+        const daysInMonth = getDaysInMonth(record.year, record.month);
+        let total = 0;
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          total += getDayTotal(record, day);
+        }
+        return total;
+      }
+
+      function getCrabMonthlyTotal(record, crabId) {
+        const daysInMonth = getDaysInMonth(record.year, record.month);
+        let total = 0;
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          total += Number(record.entries[day]?.[crabId] ?? 0);
+        }
+        return roundKg(total);
+      }
+
+      function getDaysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+      }
+
+      function formatAmount(amount) {
+        const rounded = Math.round(amount);
+        if (rounded === 0) {
+          return "0円";
+        }
+        return `-${rounded.toLocaleString("ja-JP")}円`;
+      }
+
+      function formatKg(value) {
+        return `${roundKg(Number(value ?? 0)).toFixed(1)}kg`;
+      }
+
+      function roundKg(value) {
+        return Math.round((value + Number.EPSILON) * 10) / 10;
+      }
+
+      function sanitizePrice(value) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed) || parsed < 0) {
+          return 0;
+        }
+        return Math.round(parsed);
+      }
+
+      function formatJapaneseMonth(year, month) {
+        const date = new Date(year, month - 1, 1);
+        return date.toLocaleDateString("ja-JP-u-ca-japanese", {
+          era: "long",
+          year: "numeric",
+          month: "long",
+        });
+      }
+
+      function cloneSimple(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function exportMonthImage(monthKey) {
+        const record = state.months[monthKey];
+        const canvas = drawExportCanvas(record, state.mode);
+        const fileMode = state.mode === "amount" ? "金額表示" : "kg表示";
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `活ガニロス自動計算表_${monthKey}_${fileMode}.png`;
+        link.click();
+      }
+
+      function drawExportCanvas(record, mode) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1680;
+        canvas.height = 1420;
+        const ctx = canvas.getContext("2d");
+        const daysInMonth = getDaysInMonth(record.year, record.month);
+        const left = 60;
+        const top = 170;
+        const boardWidth = 1560;
+        const boardHeight = 1010;
+        const columnGap = 24;
+        const columnWidth = (boardWidth - columnGap * 2) / 3;
+
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#efe7d7";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawRoundedRect(ctx, 36, 32, 1608, 94, 30, "#fffdf8", "#18365d", 4);
+        ctx.fillStyle = "#12233d";
+        ctx.font = "700 28px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(formatJapaneseMonth(record.year, record.month), 72, 79);
+        ctx.textAlign = "center";
+        ctx.font = "900 40px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        ctx.fillText("活ガニロス自動計算表", canvas.width / 2, 79);
+        ctx.textAlign = "right";
+        ctx.font = "700 28px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        ctx.fillText(mode === "amount" ? "金額表示" : "kg表示", 1606, 79);
+
+        COLUMN_RANGES.forEach((range, index) => {
+          const x = left + index * (columnWidth + columnGap);
+          const rows = range.rows;
+          const cellGap = 16;
+          const cellHeight = (boardHeight - cellGap * (rows - 1)) / rows;
+
+          for (let row = 0; row < rows; row += 1) {
+            const day = range.start + row;
+            const y = top + row * (cellHeight + cellGap);
+            const invalid = day > daysInMonth;
+            drawExportCard(ctx, {
+              x,
+              y,
+              width: columnWidth,
+              height: cellHeight,
+              day,
+              record,
+              invalid,
+              mode,
+            });
+          }
+        });
+
+        drawExportSummary(ctx, record, mode);
+        return canvas;
+      }
+
+      function drawExportCard(ctx, options) {
+        const { x, y, width, height, day, record, invalid, mode } = options;
+        drawRoundedRect(
+          ctx,
+          x,
+          y,
+          width,
+          height,
+          18,
+          invalid ? "#d5cec1" : "#fffdf8",
+          invalid ? "#6e7481" : "#18365d",
+          3,
+        );
+
+        ctx.fillStyle = invalid ? "#4b515b" : "#3a4d66";
+        ctx.textAlign = "center";
+        ctx.font = "800 20px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        ctx.fillText(`${day}日`, x + width / 2, y + 20);
+
+        if (invalid) {
+          ctx.font = "800 18px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+          ctx.fillText("対象外", x + width / 2, y + height / 2 + 6);
+          return;
+        }
+
+        if (mode === "amount") {
+          const total = getDayTotal(record, day);
+          ctx.fillStyle = total === 0 ? "#12233d" : "#962727";
+          ctx.font = "900 28px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+          ctx.fillText(formatAmount(total), x + width / 2, y + height / 2 + 12);
+          return;
+        }
+
+        const entry = record.entries[day];
+        ctx.fillStyle = "#12233d";
+        ctx.font = "700 17px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        CRABS.forEach((crab, index) => {
+          const row = Math.floor(index / 2);
+          const col = index % 2;
+          const cellWidth = width / 2;
+          const textX = x + cellWidth * col + cellWidth / 2;
+          const textY = y + 40 + row * 24;
+          ctx.fillText(`${crab.short} ${formatKg(entry[crab.id])}`, textX, textY);
+        });
+      }
+
+      function drawExportSummary(ctx, record, mode) {
+        const x = 1108;
+        const y = 1252;
+        const width = 512;
+        const height = 128;
+        drawRoundedRect(ctx, x, y, width, height, 24, "#fff9eb", "#18365d", 4);
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#3a4d66";
+        ctx.font = "800 24px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+
+        if (mode === "amount") {
+          ctx.fillText("その月のロス金額合計", x + width / 2, y + 38);
+          ctx.fillStyle = "#962727";
+          ctx.font = "900 42px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+          ctx.fillText(formatAmount(getMonthTotal(record)), x + width / 2, y + 90);
+          return;
+        }
+
+        ctx.fillText("その月のロスkg合計", x + width / 2, y + 34);
+        ctx.fillStyle = "#12233d";
+        ctx.font = "800 20px 'Hiragino Sans', 'Yu Gothic', sans-serif";
+        CRABS.forEach((crab, index) => {
+          const row = index < 2 ? 0 : 1;
+          const col = index % 2;
+          const itemX = x + 132 + col * 248;
+          const itemY = y + 74 + row * 28;
+          ctx.fillText(`${crab.short} ${formatKg(getCrabMonthlyTotal(record, crab.id))}`, itemX, itemY);
+        });
+      }
+
+      function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke, lineWidth) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + width, y, x + width, y + height, radius);
+        ctx.arcTo(x + width, y + height, x, y + height, radius);
+        ctx.arcTo(x, y + height, x, y, radius);
+        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = stroke;
+        ctx.stroke();
+      }
+    </script>
+  </body>
+</html>

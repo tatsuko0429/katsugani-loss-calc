@@ -386,6 +386,7 @@
 
       .summary-card {
         width: min(100%, 390px);
+        min-width: 0;
         padding: 8px 12px;
         display: flex;
         flex-direction: column;
@@ -393,6 +394,12 @@
         gap: 6px;
         text-align: center;
         background: linear-gradient(135deg, #fffdf8 0%, #f3dfb3 48%, #ecd1a0 100%);
+      }
+
+      .summary-card[data-summary-mode="kg"] {
+        width: min(100%, 430px);
+        justify-content: flex-start;
+        gap: 8px;
       }
 
       .summary-title {
@@ -415,6 +422,10 @@
         gap: 4px 8px;
       }
 
+      .summary-card[data-summary-mode="kg"] .summary-list {
+        gap: 6px 10px;
+      }
+
       .summary-item {
         padding: 5px 8px;
         border-radius: var(--radius-md);
@@ -422,6 +433,25 @@
         border: 2px solid rgba(24, 54, 93, 0.2);
         font-size: clamp(0.76rem, 1vw, 0.9rem);
         font-weight: 800;
+      }
+
+      .summary-card[data-summary-mode="kg"] .summary-item {
+        min-width: 0;
+        min-height: 48px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 4px 8px;
+        line-height: 1.2;
+      }
+
+      .summary-item-label {
+        min-width: 0;
+      }
+
+      .summary-item-value {
+        white-space: nowrap;
+        color: #173453;
       }
 
       .modal-layer {
@@ -838,9 +868,20 @@
           gap: 4px;
         }
 
+        .summary-card[data-summary-mode="kg"] {
+          width: min(100%, 380px);
+          padding: 6px 10px;
+          gap: 6px;
+        }
+
         .summary-item {
           padding: 4px 6px;
           font-size: clamp(0.68rem, 0.84vw, 0.78rem);
+        }
+
+        .summary-card[data-summary-mode="kg"] .summary-item {
+          min-height: 42px;
+          gap: 3px 6px;
         }
       }
 
@@ -861,6 +902,14 @@
         .summary-card {
           width: min(100%, 320px);
           padding: 4px 8px;
+        }
+
+        .summary-card[data-summary-mode="kg"] {
+          width: min(100%, 360px);
+        }
+
+        .summary-card[data-summary-mode="kg"] .summary-item {
+          min-height: 38px;
         }
       }
 
@@ -890,6 +939,10 @@
         }
 
         .summary-card {
+          width: 100%;
+        }
+
+        .summary-card[data-summary-mode="kg"] {
           width: 100%;
         }
 
@@ -1442,6 +1495,7 @@
 
       function renderSummary() {
         const record = getViewedRecord();
+        elements.summaryCard.dataset.summaryMode = state.mode;
 
         if (state.mode === "amount") {
           elements.summaryCard.innerHTML = `
@@ -1456,7 +1510,10 @@
           <div class="summary-list">
             ${CRABS.map(
               (crab) => `
-                <div class="summary-item">${crab.label}<br />合計 ${formatKg(getCrabMonthlyTotal(record, crab.id))}</div>
+                <div class="summary-item">
+                  <span class="summary-item-label">${crab.label}</span>
+                  <span class="summary-item-value">合計 ${formatKg(getCrabMonthlyTotal(record, crab.id))}</span>
+                </div>
               `,
             ).join("")}
           </div>

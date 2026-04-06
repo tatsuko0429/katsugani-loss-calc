@@ -318,6 +318,7 @@
       .day-card-body-kg {
         display: grid;
         align-content: center;
+        padding-top: 1px;
       }
 
       .day-amount {
@@ -336,20 +337,43 @@
         width: 100%;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px 8px;
+        gap: 3px 6px;
         align-content: center;
       }
 
       .detail-chip {
         min-width: 0;
-        padding: 2px 6px;
-        border-radius: 999px;
+        min-height: 22px;
+        padding: 2px 7px;
+        border-radius: 12px;
         border: 1px solid rgba(24, 54, 93, 0.12);
         background: rgba(255, 255, 255, 0.72);
-        font-size: clamp(0.55rem, 0.9vw, 0.74rem);
-        font-weight: 800;
-        line-height: 1.1;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 5px;
+        line-height: 1;
+        text-align: left;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .detail-chip-label,
+      .detail-chip-value {
+        min-width: 0;
         white-space: nowrap;
+      }
+
+      .detail-chip-label {
+        font-size: clamp(0.5rem, 0.74vw, 0.64rem);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+
+      .detail-chip-value {
+        justify-self: end;
+        font-size: clamp(0.56rem, 0.84vw, 0.72rem);
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
       }
 
       .detail-chip.tone-matsuba {
@@ -397,9 +421,11 @@
       }
 
       .summary-card[data-summary-mode="kg"] {
-        width: min(100%, 430px);
+        width: 100%;
+        max-width: none;
         justify-content: flex-start;
-        gap: 8px;
+        padding: 8px 12px 9px;
+        gap: 6px;
       }
 
       .summary-title {
@@ -407,6 +433,11 @@
         font-weight: 900;
         color: #173453;
         font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      }
+
+      .summary-head {
+        display: grid;
+        gap: 0;
       }
 
       .summary-value {
@@ -423,7 +454,8 @@
       }
 
       .summary-card[data-summary-mode="kg"] .summary-list {
-        gap: 6px 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px 8px;
       }
 
       .summary-item {
@@ -437,12 +469,15 @@
 
       .summary-card[data-summary-mode="kg"] .summary-item {
         min-width: 0;
-        min-height: 48px;
+        min-height: 42px;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 4px 8px;
         line-height: 1.2;
+        padding: 6px 10px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(247, 241, 228, 0.92) 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
       }
 
       .summary-item-label {
@@ -452,6 +487,53 @@
       .summary-item-value {
         white-space: nowrap;
         color: #173453;
+      }
+
+      .summary-card[data-summary-mode="kg"] .summary-title {
+        line-height: 1.1;
+      }
+
+      .summary-card[data-summary-mode="kg"] .summary-item-label {
+        color: var(--muted);
+        font-size: clamp(0.68rem, 0.84vw, 0.78rem);
+        font-weight: 900;
+      }
+
+      .summary-card[data-summary-mode="kg"] .summary-item-value {
+        font-size: clamp(0.86rem, 1.02vw, 0.98rem);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .summary-item.tone-matsuba {
+        border-color: rgba(185, 125, 29, 0.28);
+      }
+
+      .summary-item.tone-katsugani {
+        border-color: rgba(23, 91, 140, 0.28);
+      }
+
+      .summary-item.tone-kegani {
+        border-color: rgba(32, 105, 72, 0.28);
+      }
+
+      .summary-item.tone-sekogani {
+        border-color: rgba(159, 47, 47, 0.28);
+      }
+
+      .summary-item.tone-matsuba .summary-item-value {
+        color: #7d4f10;
+      }
+
+      .summary-item.tone-katsugani .summary-item-value {
+        color: #125579;
+      }
+
+      .summary-item.tone-kegani .summary-item-value {
+        color: #14583d;
+      }
+
+      .summary-item.tone-sekogani .summary-item-value {
+        color: #8e3128;
       }
 
       .modal-layer {
@@ -769,6 +851,10 @@
           flex-direction: column;
           justify-content: center;
         }
+
+        .summary-card[data-summary-mode="kg"] .summary-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
@@ -776,6 +862,44 @@
           overflow-y: auto;
           overflow-x: hidden;
           scrollbar-gutter: stable;
+        }
+      }
+
+      @media (min-width: 761px) {
+        body[data-mode="kg"] .app-shell {
+          gap: 8px;
+        }
+
+        body[data-mode="kg"] .days-board,
+        body[data-mode="kg"] .days-column {
+          gap: 7px;
+        }
+
+        body[data-mode="kg"] .day-card {
+          padding: 4px 6px 5px;
+          gap: 2px;
+        }
+
+        body[data-mode="kg"] .day-card-head {
+          min-height: 12px;
+          padding-bottom: 0;
+        }
+
+        body[data-mode="kg"] .day-card-body-kg {
+          padding-top: 0;
+        }
+
+        body[data-mode="kg"] .day-detail-grid {
+          gap: 2px 5px;
+        }
+
+        body[data-mode="kg"] .detail-chip {
+          min-height: 20px;
+          padding: 1px 6px;
+        }
+
+        body[data-mode="kg"] .summary-section {
+          min-height: 46px;
         }
       }
 
@@ -862,8 +986,16 @@
         }
 
         .detail-chip {
-          padding: 1px 4px;
-          font-size: clamp(0.46rem, 0.76vw, 0.64rem);
+          min-height: 22px;
+          padding: 2px 5px;
+        }
+
+        .detail-chip-label {
+          font-size: clamp(0.44rem, 0.7vw, 0.58rem);
+        }
+
+        .detail-chip-value {
+          font-size: clamp(0.5rem, 0.76vw, 0.64rem);
         }
 
         .summary-section {
@@ -877,7 +1009,7 @@
         }
 
         .summary-card[data-summary-mode="kg"] {
-          width: min(100%, 380px);
+          width: 100%;
           padding: 6px 10px;
           gap: 6px;
         }
@@ -889,7 +1021,7 @@
 
         .summary-card[data-summary-mode="kg"] .summary-item {
           min-height: 42px;
-          gap: 3px 6px;
+          gap: 3px;
         }
       }
 
@@ -913,7 +1045,7 @@
         }
 
         .summary-card[data-summary-mode="kg"] {
-          width: min(100%, 360px);
+          width: 100%;
         }
 
         .summary-card[data-summary-mode="kg"] .summary-item {
@@ -952,6 +1084,10 @@
 
         .summary-card[data-summary-mode="kg"] {
           width: 100%;
+        }
+
+        .summary-card[data-summary-mode="kg"] .summary-head {
+          text-align: center;
         }
 
         .adjust-grid {
@@ -1001,6 +1137,10 @@
         }
 
         .summary-list {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-card[data-summary-mode="kg"] .summary-list {
           grid-template-columns: 1fr;
         }
 
@@ -1394,6 +1534,7 @@
       }
 
       function render() {
+        document.body.dataset.mode = state.mode;
         renderHeader();
         renderHistoryStrip();
         renderDaysBoard();
@@ -1493,7 +1634,10 @@
             <div class="day-detail-grid">
               ${CRABS.map(
                 (crab) => `
-                  <div class="detail-chip ${getCrabToneClass(crab.id)}">${crab.short} ${formatKg(entry[crab.id])}</div>
+                  <div class="detail-chip ${getCrabToneClass(crab.id)}">
+                    <span class="detail-chip-label">${crab.short}</span>
+                    <span class="detail-chip-value">${formatKg(entry[crab.id])}</span>
+                  </div>
                 `,
               ).join("")}
             </div>
@@ -1514,13 +1658,15 @@
         }
 
         elements.summaryCard.innerHTML = `
-          <div class="summary-title">その月のロスkg合計</div>
+          <div class="summary-head">
+            <div class="summary-title">その月のロスkg合計</div>
+          </div>
           <div class="summary-list">
             ${CRABS.map(
               (crab) => `
-                <div class="summary-item">
+                <div class="summary-item ${getCrabToneClass(crab.id)}">
                   <span class="summary-item-label">${crab.label}</span>
-                  <span class="summary-item-value">合計 ${formatKg(getCrabMonthlyTotal(record, crab.id))}</span>
+                  <span class="summary-item-value">${formatKg(getCrabMonthlyTotal(record, crab.id))}</span>
                 </div>
               `,
             ).join("")}

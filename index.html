@@ -771,6 +771,14 @@
         }
       }
 
+      @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
+        .app-shell {
+          overflow-y: auto;
+          overflow-x: hidden;
+          scrollbar-gutter: stable;
+        }
+      }
+
       @media (max-height: 900px) {
         :root {
           --header-height: clamp(92px, 13svh, 118px);

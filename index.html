@@ -1124,6 +1124,66 @@
           text-align: center;
         }
 
+        body[data-mode="kg"] .app-shell {
+          grid-template-rows: auto auto auto auto;
+          align-content: start;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        body[data-mode="kg"] .board-section {
+          overflow: visible;
+        }
+
+        body[data-mode="kg"] .days-board,
+        body[data-mode="kg"] .days-column {
+          height: auto;
+          align-content: start;
+        }
+
+        body[data-mode="kg"] .days-column[data-rows="10"] {
+          grid-template-rows: repeat(10, minmax(54px, auto));
+        }
+
+        body[data-mode="kg"] .days-column[data-rows="11"] {
+          grid-template-rows: repeat(11, minmax(54px, auto));
+        }
+
+        body[data-mode="kg"] .day-card {
+          padding: 3px 4px 4px;
+          gap: 1px;
+        }
+
+        body[data-mode="kg"] .day-card-head {
+          min-height: 11px;
+          padding-bottom: 0;
+        }
+
+        body[data-mode="kg"] .day-card-body-kg {
+          align-content: stretch;
+          padding-top: 0;
+        }
+
+        body[data-mode="kg"] .day-detail-grid {
+          gap: 1px 3px;
+          align-content: stretch;
+        }
+
+        body[data-mode="kg"] .detail-chip {
+          min-height: 15px;
+          padding: 1px 3px;
+          border-radius: 7px;
+          gap: 2px;
+        }
+
+        .modal-panel {
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
+        }
+
         .adjust-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
@@ -1147,6 +1207,7 @@
         }
 
         .modal-panel {
+          max-height: calc(100svh - 20px);
           padding: 16px 14px;
         }
 
@@ -1176,6 +1237,27 @@
 
         .summary-card[data-summary-mode="kg"] .summary-list {
           grid-template-columns: 1fr;
+        }
+
+        body[data-mode="kg"] .days-column[data-rows="10"] {
+          grid-template-rows: repeat(10, minmax(50px, auto));
+        }
+
+        body[data-mode="kg"] .days-column[data-rows="11"] {
+          grid-template-rows: repeat(11, minmax(50px, auto));
+        }
+
+        body[data-mode="kg"] .detail-chip {
+          min-height: 14px;
+          padding-inline: 2px;
+        }
+
+        body[data-mode="kg"] .detail-chip-label {
+          font-size: clamp(0.42rem, 1.9vw, 0.56rem);
+        }
+
+        body[data-mode="kg"] .detail-chip-value {
+          font-size: clamp(0.48rem, 2.2vw, 0.62rem);
         }
 
         .adjust-grid {

@@ -1436,6 +1436,18 @@
         }
       }
 
+      function triggerHapticFeedback() {
+        if (typeof navigator.vibrate !== "function" || navigator.maxTouchPoints === 0) {
+          return;
+        }
+
+        try {
+          navigator.vibrate(12);
+        } catch {
+          // Unsupported environments should keep working without feedback.
+        }
+      }
+
       function bindEvents() {
         document.addEventListener("click", handleClick);
         document.addEventListener("keydown", handleKeyDown);
@@ -1452,6 +1464,7 @@
         }
 
         const action = actionTarget.dataset.action;
+        triggerHapticFeedback();
 
         switch (action) {
           case "toggle-mode":

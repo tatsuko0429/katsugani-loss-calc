@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!--
+  2026年4月27日時点の開発者向け保守メモ。
+  このツールは単一の index.html に画面構造、CSS、JavaScript を集約し、
+  manifest.webmanifest と icons/ はホーム画面追加・PWA表示用の補助ファイルとして参照している。
+  ログイン処理やサーバー同期は現状存在せず、月別データと表示モードは端末内の localStorage に保存する前提。
+  印刷専用の @media print はなく、「画像を保存」は canvas で画面相当のPNGを生成する独立した出力経路になっている。
+
+  作業開始時の最低限の確認順:
+  1. STORAGE_KEY、CRABS、COLUMN_RANGES、保存データ形状を先に読む。
+  2. data-action と handleClick の対応、CSSの data-mode / data-summary-mode 依存を確認する。
+  3. 変更後は初期表示、金額設定、日別kg入力、表示切替、履歴閲覧、履歴削除、画像保存、月またぎ処理を確認する。
+  ここを触ったらここも確認する: CRABSを触ったら保存データ・CSS tone-*・集計・canvas出力、COLUMN_RANGESを触ったら画面グリッドと画像保存、保存キーや月キーを触ったら既存履歴の読み込みを必ず確認する。
+-->
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
@@ -13,8 +26,15 @@
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png" />
+    <!-- manifest.webmanifest は厳密なJSON、icons/ は画像バイナリのため、保守メモは参照元のここに残す。PWA名・色・アイコンパスを変えたら manifest と実ファイルを同時に確認する。 -->
     <link rel="manifest" href="manifest.webmanifest" />
     <style>
+      /*
+        2026年4月27日時点のCSS保守メモ。
+        画面は「ヘッダー / 履歴帯 / 日別ボード / 集計」の4段構成で、kg表示時だけ密度が上がる。
+        見た目だけでなく、店舗運用で1か月31日分を一画面で確認するためのレイアウトなので、
+        余白・高さ・列数を変える場合は通常表示、kg表示、スマホ、低い画面、画像保存の見え方をまとめて確認する。
+      */
       :root {
         --bg: #ece7dc;
         --surface: #fffdf8;
@@ -66,6 +86,7 @@
       }
 
       body {
+        /* 通常表示は1画面内に収める前提。kg表示の一部ブレークポイントだけ下の media query でスクロールを許可する。 */
         overflow: hidden;
         touch-action: manipulation;
       }
@@ -90,6 +111,10 @@
         display: none !important;
       }
 
+      /*
+        アプリ全体の枠。grid-template-rows はHTMLの4セクション順と対応している。
+        DOM順を変えると初期表示、履歴表示、集計位置、画像保存時の視線誘導がずれるため、構造変更時は全表示モードを確認する。
+      */
       .app-shell {
         height: 100svh;
         max-height: 100svh;
@@ -230,6 +255,10 @@
         overflow: hidden;
       }
 
+      /*
+        日別ボードは 1-10日 / 11-20日 / 21-31日の3列固定。
+        この分割は JS の COLUMN_RANGES と canvas 出力でも同じ前提を使う。
+      */
       .days-board {
         height: 100%;
         min-height: 0;
@@ -427,6 +456,10 @@
         background: linear-gradient(135deg, #fffdf8 0%, #f3dfb3 48%, #ecd1a0 100%);
       }
 
+      /*
+        kg表示の集計は4品目を同時に見る業務用途があるため、金額表示より横幅を広げている。
+        data-summary-mode は renderSummary() が付けるCSS契約なので名称変更時はJS側も同時確認する。
+      */
       .summary-card[data-summary-mode="kg"] {
         width: 100%;
         max-width: none;
@@ -543,6 +576,10 @@
         color: #8e3128;
       }
 
+      /*
+        モーダルは日別入力、単価設定、履歴、削除確認、お知らせで共用。
+        renderModal() が中身を毎回再生成するため、CSS側ではスクロール保持とタッチ操作を壊さないことが重要。
+      */
       .modal-layer {
         position: fixed;
         inset: 0;
@@ -849,6 +886,7 @@
         font-weight: 800;
       }
 
+      /* 中幅画面ではヘッダーとkg集計だけを先に詰める。日別3列の前提は維持する。 */
       @media (max-width: 980px) {
         .app-header {
           grid-template-columns: 1fr 1.1fr 1.15fr;
@@ -864,6 +902,7 @@
         }
       }
 
+      /* kg表示は1日カード内に4品目を出すため、通常表示より密度を上げる。金額表示へ影響しないよう body[data-mode="kg"] に限定する。 */
       @media (min-width: 761px) {
         body[data-mode="kg"] .app-shell {
           gap: 8px;
@@ -902,6 +941,7 @@
         }
       }
 
+      /* PCのkg表示では全31日を無理に1画面固定せず、読みやすさ優先で縦スクロールを許可する。 */
       @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
         .app-shell {
           overflow-y: auto;
@@ -937,6 +977,7 @@
         }
       }
 
+      /* 低い画面向けの圧縮指定。ここを触ると日別カードの欠けや集計のはみ出しが起きやすい。 */
       @media (max-height: 900px) {
         :root {
           --header-height: clamp(92px, 13svh, 118px);
@@ -1087,6 +1128,7 @@
         }
       }
 
+      /* スマホではヘッダーを縦積みにするが、日別ボードの3列構造は維持して一覧性を優先する。 */
       @media (max-width: 760px) {
         :root {
           --header-height: auto;
@@ -1270,6 +1312,11 @@
     </style>
   </head>
   <body>
+    <!--
+      HTML構造の保守メモ。
+      静的HTMLは枠だけを置き、日別カード・集計・モーダル内容はJSが innerHTML で描画する。
+      id は elements の参照先、data-action は handleClick のイベント委譲先なので、見た目の調整だけで変更しない。
+    -->
     <main class="app-shell">
       <header class="app-header">
         <div class="header-month" id="header-month"></div>
@@ -1311,19 +1358,36 @@
     <div class="modal-layer hidden" id="modal-layer"></div>
 
     <script>
+      /*
+        2026年4月27日時点のJavaScript保守メモ。
+        責務は「保存領域の抽象化」「現在月の同期」「画面描画」「モーダル入力」「月別集計」「canvas画像保存」。
+        サーバー、認証、外部ライブラリに依存しない設計なので、追加機能もまず既存の state / runtime / render() の流れに乗せる。
+      */
       const STORAGE_KEY = "katsugani-loss-app-v1";
+      /*
+        CRABS の id は保存データのキー、CSSの tone-* クラス、単価入力、kg集計、画像保存の全てで共有する不変の識別子。
+        名称表示だけを変える場合でも id は既存履歴との互換性があるため安易に変更しない。
+      */
       const CRABS = [
         { id: "matsuba", label: "松葉がに", short: "松葉" },
         { id: "katsugani", label: "活がに", short: "活" },
         { id: "kegani", label: "毛がに", short: "毛" },
         { id: "sekogani", label: "せこがに", short: "せこ" },
       ];
+      /*
+        COLUMN_RANGES は画面と画像保存で共通の31日分レイアウト定義。
+        31日未満の月もカード自体は生成し、対象外表示にすることで月ごとの見た目を揃えている。
+      */
       const COLUMN_RANGES = [
         { start: 1, end: 10, rows: 10 },
         { start: 11, end: 20, rows: 10 },
         { start: 21, end: 31, rows: 11 },
       ];
 
+      /*
+        runtime は画面操作中だけの一時状態。localStorageには保存しない。
+        currentMonthKey と viewMonthKey を分けることで、今月データを保持したまま履歴を閲覧専用で表示する。
+      */
       const runtime = {
         currentMonthKey: "",
         viewMonthKey: "",
@@ -1332,6 +1396,7 @@
         hasShownStorageNotice: false,
       };
 
+      /* elements は静的DOMの参照だけを持つ。日別カードやモーダル内要素は再描画されるため都度 query しない前提。 */
       const elements = {
         headerMonth: document.querySelector("#header-month"),
         daysBoard: document.querySelector("#days-board"),
@@ -1346,6 +1411,10 @@
 
       boot();
 
+      /*
+        初期化順は保存データ読込後、現在月を必ず用意し、イベント登録、描画、保存警告の順。
+        render() 前に runtime.viewMonthKey が未設定だと getViewedRecord() が壊れる。
+      */
       function boot() {
         syncCurrentMonth();
         runtime.viewMonthKey = runtime.currentMonthKey;
@@ -1356,6 +1425,10 @@
         window.setInterval(syncMonthIfNeeded, 60_000);
       }
 
+      /*
+        保存領域の抽象化。localStorage が使えない開き方でも操作できるようメモリ保存へ落とす。
+        メモリ保存はリロードで消えるため、永続保存前提の仕様を追加する場合はここではなく保存警告と公開方法も確認する。
+      */
       function createStorage() {
         const memoryStore = {};
 
@@ -1401,6 +1474,10 @@
         }
       }
 
+      /*
+        保存データの読み込みは壊れたJSONや古い形を握りつぶして空状態へ戻す方針。
+        将来フィールドを増やす場合も、既存端末の katsugani-loss-app-v1 を読めるデフォルトを必ず残す。
+      */
       function loadState() {
         try {
           const raw = storage.getItem(STORAGE_KEY);
@@ -1422,6 +1499,7 @@
         }
       }
 
+      /* 保存対象は表示モードと月別データだけ。runtime.modal や閲覧中履歴は保存しない。 */
       function saveState() {
         try {
           storage.setItem(
@@ -1448,6 +1526,10 @@
         }
       }
 
+      /*
+        クリックは document へのイベント委譲で処理する。
+        innerHTML 再描画後もイベントが切れない設計なので、新しいボタンは data-action と switch case をセットで追加する。
+      */
       function bindEvents() {
         document.addEventListener("click", handleClick);
         document.addEventListener("keydown", handleKeyDown);
@@ -1543,6 +1625,7 @@
         }
       }
 
+      /* キーボード入力は単価モーダル専用。日別kg入力は誤操作防止のためボタン操作だけにしている。 */
       function handleKeyDown(event) {
         if (runtime.modal.type !== "prices") {
           return;
@@ -1573,6 +1656,10 @@
         }
       }
 
+      /*
+        月またぎ検知。開きっぱなし運用を想定し、可視状態への復帰と1分間隔で現在月を確認する。
+        月が変わったら自動で今月へ戻し、前月は履歴として残す。
+      */
       function syncMonthIfNeeded() {
         if (document.visibilityState === "hidden") {
           return;
@@ -1600,6 +1687,10 @@
         renderModal();
       }
 
+      /*
+        現在月レコードの作成入口。新月は直近過去月の単価を引き継ぎ、kg入力は空で開始する。
+        月キーは YYYY-MM の文字列比較で履歴順・引き継ぎ元判定に使うため形式を変えない。
+      */
       function syncCurrentMonth() {
         const now = new Date();
         const currentMonthKey = getMonthKey(now.getFullYear(), now.getMonth() + 1);
@@ -1623,6 +1714,10 @@
         return { ...state.months[latestBeforeCurrent].prices };
       }
 
+      /*
+        月レコードは常に1日から31日まで entries を持つ。
+        29-31日が存在しない月でも、描画と画像保存が同じ添字で参照できるようにするための不変条件。
+      */
       function createMonthRecord(year, month, basePrices) {
         const entries = {};
         for (let day = 1; day <= 31; day += 1) {
@@ -1665,6 +1760,10 @@
         return runtime.viewMonthKey !== runtime.currentMonthKey;
       }
 
+      /*
+        画面全体の再描画入口。state.mode は body[data-mode] と集計カードの内容、画像保存の表示モードに連動する。
+        部分更新を足す場合も、履歴閲覧・モーダル・保存後の整合性を崩さないよう render() 経由を基準にする。
+      */
       function render() {
         document.body.dataset.mode = state.mode;
         renderHeader();
@@ -1674,6 +1773,7 @@
         renderModal();
       }
 
+      /* 履歴表示中は単価設定を無効化する。過去月の金額を後から変えない運用ルール。 */
       function renderHeader() {
         const record = getViewedRecord();
         elements.headerMonth.textContent = formatJapaneseMonth(record.year, record.month);
@@ -1693,6 +1793,10 @@
           `履歴を表示中: ${formatJapaneseMonth(record.year, record.month)} は閲覧専用です`;
       }
 
+      /*
+        日別カードは毎回HTML文字列で全再生成する。
+        data-rows はCSSの行数指定、COLUMN_RANGES は画像保存にも渡るため片方だけ変えない。
+      */
       function renderDaysBoard() {
         const record = getViewedRecord();
         const daysInMonth = getDaysInMonth(record.year, record.month);
@@ -1709,6 +1813,10 @@
         return `<div class="days-column" data-rows="${range.rows}">${cards.join("")}</div>`;
       }
 
+      /*
+        履歴月と対象外日は disabled にして編集不可にする。
+        31日固定表示と「対象外」表示は月ごとの表の形を揃えるための仕様。
+      */
       function renderDayCard(day, record, isInvalid) {
         const entry = record.entries[day] ?? createEmptyEntry();
         const classes = ["day-card"];
@@ -1777,6 +1885,7 @@
         `;
       }
 
+      /* 集計表示は amount と kg でDOM構造が異なる。CSSの data-summary-mode 依存と合わせて確認する。 */
       function renderSummary() {
         const record = getViewedRecord();
         elements.summaryCard.dataset.summaryMode = state.mode;
@@ -1806,6 +1915,10 @@
         `;
       }
 
+      /*
+        モーダル内容は操作ごとに再生成するが、scrollTop を runtime.modal に退避してスクロール位置を保つ。
+        スマホで単価設定や日別入力を連続操作するための重要な挙動。
+      */
       function renderModal() {
         const previousPanel = elements.modalLayer.querySelector(".modal-panel");
         if (previousPanel && runtime.modal.type) {
@@ -1843,6 +1956,10 @@
         }
       }
 
+      /*
+        日別入力は draftEntry にコピーしてから編集する。
+        「戻る」で破棄、「反映」で保存する仕様なので、record.entries を直接触らない。
+      */
       function openDayModal(day) {
         const record = getViewedRecord();
         runtime.modal = {
@@ -1887,6 +2004,10 @@
         `;
       }
 
+      /*
+        kgは0.1kg刻み、負数不可。浮動小数の誤差を roundKg() で丸める。
+        ステップ名は data-step と対応しているため、ボタン追加時はここも更新する。
+      */
       function adjustDraftValue(crabId, step) {
         if (runtime.modal.type !== "day") {
           return;
@@ -1921,6 +2042,10 @@
         render();
       }
 
+      /*
+        単価設定は現在表示中レコードの prices を文字列ドラフトへ変換して編集する。
+        履歴表示中は open-prices 側でブロックされるため、過去月の単価変更はできない。
+      */
       function openPriceModal() {
         const record = getViewedRecord();
         runtime.modal = {
@@ -1931,6 +2056,10 @@
         };
       }
 
+      /*
+        単価入力は readonly + inputmode="none" と独自テンキーで統一する。
+        端末ごとのソフトキーボード差でレイアウトが崩れないようにするため、通常の数値inputへ置き換える場合はスマホ確認が必須。
+      */
       function renderPriceModal() {
         const activeCrab = CRABS.find((crab) => crab.id === runtime.modal.activePriceId) ?? CRABS[0];
         return `
@@ -2020,6 +2149,10 @@
         }
       }
 
+      /*
+        単価は最大7桁の整数。先頭ゼロを整理し、空文字は表示・保存時に0として扱う。
+        既存データは sanitizePrice() で丸めるため、小数単価を導入すると集計仕様が変わる。
+      */
       function handlePriceKey(keyValue) {
         if (runtime.modal.type !== "prices") {
           return;
@@ -2158,12 +2291,20 @@
         runtime.modal = { type: null };
       }
 
+      /*
+        履歴一覧は現在月を除外し、新しい月から表示する。
+        削除対象もこの一覧由来なので、現在月を削除できないことが保存データ保護の前提。
+      */
       function getHistoryKeys() {
         return Object.keys(state.months)
           .filter((monthKey) => monthKey !== runtime.currentMonthKey)
           .sort((left, right) => right.localeCompare(left));
       }
 
+      /*
+        金額は「ロス額」として表示するため formatAmount() でマイナス記号を付ける。
+        計算自体は kg * kg単価 の正数合計で保持する。
+      */
       function getDayTotal(record, day) {
         const entry = record.entries[day];
         if (!entry) {
@@ -2179,6 +2320,7 @@
         return Math.round(rawTotal);
       }
 
+      /* 月合計は実在する日数だけを集計する。31日固定entriesの対象外日を含めないこと。 */
       function getMonthTotal(record) {
         const daysInMonth = getDaysInMonth(record.year, record.month);
         let total = 0;
@@ -2225,6 +2367,10 @@
         return Math.round(parsed);
       }
 
+      /*
+        表示は和暦の年月、内部キーは YYYY-MM。
+        表示文字列で比較・保存すると元号変更や表記差で壊れるため、月の識別には getMonthKey() だけを使う。
+      */
       function formatJapaneseMonth(year, month) {
         const date = new Date(year, month - 1, 1);
         return date.toLocaleDateString("ja-JP-u-ca-japanese", {
@@ -2238,6 +2384,10 @@
         return JSON.parse(JSON.stringify(value));
       }
 
+      /*
+        画像保存はブラウザ印刷ではなく canvas でPNGを生成する。
+        表示中の state.mode を使うため、履歴月でも現在の表示切替状態で保存される。
+      */
       function exportMonthImage(monthKey) {
         const record = state.months[monthKey];
         const canvas = drawExportCanvas(record, state.mode);
@@ -2248,6 +2398,10 @@
         link.click();
       }
 
+      /*
+        canvas出力の座標は画面CSSとは別管理だが、COLUMN_RANGES・CRABS・集計関数を共有している。
+        レイアウト数値を変えたら、金額表示とkg表示のPNGを両方確認する。
+      */
       function drawExportCanvas(record, mode) {
         const canvas = document.createElement("canvas");
         canvas.width = 1680;
